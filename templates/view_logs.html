@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{{ campus }} | Campus Logs</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f4f7fc;
+            padding: 20px;
+        }
+        h2 {
+            color: #333;
+        }
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            background: white;
+            box-shadow: 0 0 8px rgba(0,0,0,0.1);
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 10px 12px;
+            text-align: center;
+        }
+        th {
+            background-color: #3b5998;
+            color: white;
+        }
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        .message {
+            margin-top: 20px;
+            font-weight: bold;
+            color: #555;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <a href="/logout" style="float: right; margin-bottom: 10px;">
+    <button type="button">Logout</button>
+    </a>
+    <h2>Logs for {{ campus }}</h2>
+
+    {% if message %}
+        <div class="message">{{ message }}</div>
+    {% else %}
+        <table>
+            <tr>
+                <th>RFID</th>
+                <th>Name</th>
+                <th>Check In</th>
+                <th>Check Out</th>
+            </tr>
+            {% for log in logs %}
+            <tr>
+                <td>{{ log.RFID }}</td>
+                <td>{{ log.name }}</td>
+                <td>{{ log.check_in | default("—") }}</td>
+                <td>{{ log.check_out | default("—") }}</td>
+            </tr>
+            {% endfor %}
+        </table>
+    {% endif %}
+
+    <br>
+    <a href="/admin/add_student">Add Another Student</a><br>
+    <a href="/admin/summary">View Summary</a>
+</body>
+</html>

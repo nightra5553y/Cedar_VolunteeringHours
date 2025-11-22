@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Student Login / Logout</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #eef3fc;
+            padding: 20px;
+        }
+        h2 {
+            color: #222;
+        }
+        form {
+            margin-bottom: 20px;
+        }
+        input[type="text"] {
+            padding: 10px;
+            width: 250px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        button {
+            padding: 10px 15px;
+            background-color: #3b5998;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #2e4373;
+        }
+        .message {
+            color: green;
+            font-weight: bold;
+            margin-bottom: 15px;
+        }
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            background: white;
+            box-shadow: 0 0 8px rgba(0,0,0,0.1);
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 10px 12px;
+            text-align: center;
+        }
+        th {
+            background-color: #3b5998;
+            color: white;
+        }
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+    </style>
+</head>
+<body>
+    <a href="/logout" style="float: right; margin-bottom: 10px;">
+    <button type="button">Logout</button>
+    </a>
+    <h2>Student Logged in</h2>
+
+    {% if message %}
+        <div class="message">{{ message }}</div>
+    {% endif %}
+
+    <form method="POST">
+        <input type="text" name="rfid" placeholder="Enter RFID" required>
+        <button type="submit">Submit</button>
+    </form>
+
+    <h3>Currently Logged Students (All Campuses)</h3>
+
+    {% if logs %}
+        <table>
+            <tr>
+                <th>RFID</th>
+                <th>Name</th>
+                <th>Campus</th>
+                <th>Check In Time</th>
+                <th>Present at</th>
+            </tr>
+            {% for log in logs %}
+            <tr>
+                <td>{{ log.RFID }}</td>
+                <td>{{ log.Name }}</td>
+                <td>{{ log.campus_name or "—" }}</td>
+                <td>{{ log.check_in or log.check_in_time}}</td>
+                <td>{{locale}}</td>
+            </tr>
+            {% endfor %}
+        </table>
+    {% else %}
+        <p>No students logged in currently.</p>
+    {% endif %}
+
+    <br>
+    <a href="/admin/dashboard">Admin Dashboard</a><br>
+    <a href="/admin/summary">View Summary</a>
+</body>
+</html>

@@ -1,0 +1,25 @@
+{% extends 'base.html'%}
+
+{% block head %} 
+<title>Volunteering Summary</title>
+{% endblock %}
+
+{% block body %}
+<div class="content">
+  <h1>Volunteering Hours Summary</h1>
+  <table border="1" cellpadding="8" cellspacing="0">
+    <tr>
+      <th>Student Name</th>
+      <th>Total Hours</th>
+    </tr>
+    {% for row in rows %}
+    <tr>
+      <td>{{ row['Name'] }}</td>
+      <td>{{ "%.2f"|format(row['Hours_Volunteered']) }}</td>
+    </tr>
+    {% endfor %}
+  </table>
+  <br>
+  <a href="/admin/dashboard"><button type="button">Back to Dashboard</button></a>
+</div>
+{% endblock %}
