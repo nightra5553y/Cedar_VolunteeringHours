@@ -2,10 +2,37 @@
 
 {% block head %}
 <title>Admin Login</title>
+<style>
+.header {
+  display: flex;
+  align-items: center;
+  padding: 15px;
+  background: #f8f9fa;
+  border-bottom: 1px solid #ccc;
+
+}
+.logo {
+  height: 15px;
+  margin-right: 15px;
+}
+
+body {
+  background: #fafafa;
+  font-family: 'Segoe UI', Tahoma;
+
+}
+
+
+</style>
 {% endblock %}
 
 {% block body %}
-<h2>Admin Login</h2>
+<div class="header">
+    <img src="{{ url_for('static', filename='logo.png') }}" class="logo">
+    <h2>Admin Login</h2>
+</div>
+
+
 {% if error %}
 <p style="color: red;">{{ error }}</p>
 {% endif %}

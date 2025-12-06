@@ -57,6 +57,11 @@
     </style>
 </head>
 <body>
+    <script>
+    setTimeout(function(){
+        window.location.reload();
+    }, 15000); // auto refresh every 15 seconds
+    </script>
     <a href="/logout" style="float: right; margin-bottom: 10px;">
     <button type="button">Logout</button>
     </a>
@@ -72,6 +77,7 @@
     </form>
 
     <h3>Currently Logged Students (All Campuses)</h3>
+    <h4>There are a total of {{tot}} students logged in</h4>
 
     {% if logs %}
         <table>
@@ -80,6 +86,7 @@
                 <th>Name</th>
                 <th>Campus</th>
                 <th>Check In Time</th>
+                <th>Time Ago</th>
                 <th>Present at</th>
             </tr>
             {% for log in logs %}
@@ -88,6 +95,7 @@
                 <td>{{ log.Name }}</td>
                 <td>{{ log.campus_name or "—" }}</td>
                 <td>{{ log.check_in or log.check_in_time}}</td>
+                <td>{{longago}}</td>
                 <td>{{locale}}</td>
             </tr>
             {% endfor %}

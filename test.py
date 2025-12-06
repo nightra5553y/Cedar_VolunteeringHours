@@ -1,6 +1,6 @@
 #Importing stuff
 from flask import Flask, render_template, redirect, request, jsonify, url_for, session
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from flask_bcrypt import Bcrypt
 from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity, get_jwt
 import os, sys, sqlite3
@@ -18,6 +18,21 @@ Supabase_ServiceKey = os.getenv("SUPABASE_SERVICEKEY")
 
 supabase = create_client(Supabase_URL, Supabase_ServiceKey)
 
+def time_ago(timestamp_str):
+    timestamp = datetime.fromisoformat(timestamp_str.replace('Z', '+00:00'))
+    now = datetime.now(timezone.utc)
+    diff = now - timestamp
+
+    seconds = diff.total_seconds()
+
+    if seconds < 60:
+        return f"{int(seconds)}s ago"
+    elif seconds < 3600:
+        return f"{int(seconds/60)}m ago"
+    elif seconds < 86400:
+        return f"{int(seconds/3600)}h ago"
+    else:
+        return f"{int(seconds/86400)}d ago"
 
 #Creating the actual web
 app = Flask(__name__)
@@ -125,7 +140,8 @@ def add_student():
         
         response = supabase.rpc("log_in_or_out", {
             "rfid_input": int(rfid),
-            "campus_input": home_campus
+            "campus_input": home_campus,
+            "present_at": locale
         }).execute()
         
 
@@ -138,13 +154,14 @@ def add_student():
         message = None
 
     result = supabase.rpc("get_logged_in").execute()
+    tot = supabase.table("Logs").select(count='*').eq("check_out", None)
     logs = result.data or []
-    
+    longago = time_ago(logs["check_in"])
 
     
     
 
-    return render_template("login.html", logs=logs, message=message, locale=locale)
+    return render_template("login.html", logs=logs, message=message, locale=locale, tot=tot, longago=longago)
     
 
 #Viewing the sum hours
@@ -163,7 +180,6 @@ def logout():
     resp = redirect(url_for("admin_login"))
     resp.delete_cookie("access_token_cookie")
     return resp
-
 
 def open_browser():
     webbrowser.open("http://127.0.0.1:5000/admin/login")
