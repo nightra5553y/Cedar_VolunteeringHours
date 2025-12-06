@@ -38,12 +38,14 @@
     </style>
 </head>
 <body>
-    
+    <div class="header">
+    <img src='logo.png' class="logo">
+    <h2>Logs for {{ campus }}</h2>
+    </div>
     <a href="/logout" style="float: right; margin-bottom: 10px;">
     <button type="button">Logout</button>
     </a>
-    <h2>Logs for {{ campus }}</h2>
-
+    
     {% if message %}
         <div class="message">{{ message }}</div>
     {% else %}
