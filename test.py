@@ -156,8 +156,9 @@ def add_student():
     result = supabase.rpc("get_logged_in").execute()
     tot = supabase.table("Logs").select(count='*').eq("check_out", None)
     logs = result.data or []
-    longago = time_ago(logs[0]["check_in"])
-
+    longago = []
+    for log in logs:
+        longago.append(log["check_in"])
     
     
 
