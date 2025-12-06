@@ -99,8 +99,11 @@
                 <td>{{ log.Name }}</td>
                 <td>{{ log.campus_name or "—" }}</td>
                 <td>{{ log.check_in or log.check_in_time}}</td>
-                <td>{{longago}}</td>
-                <td>{{locale}}</td>
+                
+            </tr>
+            {% for l in longago %}
+            <tr>
+                <td>{{l}}</td>
             </tr>
             {% endfor %}
         </table>
