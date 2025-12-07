@@ -82,7 +82,8 @@ def admin_login():
         resp = redirect(url_for("admin_dashboard"))
         resp.set_cookie("access_token_cookie", token, httponly=True)
         return resp
-    return render_template("admin_login.html")
+    s = url_for("static", filename="logo.png")
+    return render_template("admin_login.html", s=s)
 
 
 @app.route("/admin/dashboard")
@@ -144,7 +145,7 @@ def add_student():
             "present_at": locale
         }).execute()
         
-
+        
         
 
 
