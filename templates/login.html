@@ -87,8 +87,9 @@
     </form>
 
     <h3>Currently Logged Students (All Campuses)</h3>
+    {% if tot > 0 %}
     <h4>There are a total of {{tot}} students logged in</h4>
-
+    {% endif %}
     {% if logs %}
         <table>
             <tr>
