@@ -98,7 +98,7 @@
                 <th>Campus</th>
                 <th>Check In Time</th>
                 <th>Time Ago</th>
-                <th>Present at</th>
+                
             </tr>
             {% for log in logs %}
             <tr>
@@ -108,11 +108,6 @@
                 <td>{{ log.check_in or log.check_in_time}}</td>
             {% endfor %}    
             </tr>
-            {% for l in longago %}
-            <tr>
-                <td>{{l}}</td>
-            </tr>
-            {% endfor %}
         </table>
     {% else %}
         <p>No students logged in currently.</p>
