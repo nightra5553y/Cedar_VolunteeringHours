@@ -142,7 +142,7 @@ def add_student():
         response = supabase.rpc("log_in_or_out", {
             "rfid_input": int(rfid),
             "campus_input": home_campus,
-            "present_at": locale
+            "locale": locale
         }).execute()
         
         
