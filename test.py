@@ -159,12 +159,10 @@ def add_student():
     tot = tots.count
     logs = result.data or []
     longago = []
-    for log in logs:
-        longago.append(log["check_in"])
     
     
 
-    return render_template("login.html", logs=logs, message=message, locale=locale, tot=tot, longago=longago)
+    return render_template("login.html", logs=logs, message=message, locale=locale, tot=tot)
     
 
 #Viewing the sum hours
