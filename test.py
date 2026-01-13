@@ -156,7 +156,11 @@ def add_student():
         rfid = request.form.get("rfid")
 
         campus_info = supabase.table("Students").select("Campus_id").eq("RFID", rfid).execute()
-        if not campus_info.data:
+        try:
+            
+            home_campus = campus_info.data[0]["Campus_id"]
+        except:
+            
             message = "RFID not found"
             result = supabase.rpc("get_logged_in").execute()
             tots = supabase.table("Logs").select("*", count="exact").is_("check_out", "null").execute()
@@ -167,8 +171,6 @@ def add_student():
                     log["time_ago"] = time_ago(log["rawtime"])
             return render_template("login.html", logs=logs, message=message, locale=locale, tot=tot)
         
-        home_campus = campus_info.data[0]["Campus_id"]
-
         campus = supabase.table("Campus").select("Name").eq("id", home_campus).execute()
         
         response = supabase.rpc("log_in_or_out", {
