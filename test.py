@@ -23,12 +23,11 @@ supabase = create_client(Supabase_URL, Supabase_ServiceKey)
 def time_ago(timestamp_str):
     timestamp = datetime.fromisoformat(timestamp_str.replace('Z', '+00:00'))
     pakistan_tz = ZoneInfo("Asia/Karachi") 
-    timestamp_local = timestamp.astimezone(pakistan_tz) 
+    timestamp_local = timestamp.astimezone(pakistan_tz)
     now_local = datetime.now(pakistan_tz)
-    diff = now_local - timestamp_local
-
+    diff = now_local - timestamp_local 
     seconds = diff.total_seconds()
-
+    
     if seconds < 60:
         return f"{int(seconds)}s ago"
     elif seconds < 3600:
