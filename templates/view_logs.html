@@ -44,6 +44,9 @@
     </style>
 </head>
 <body>
+    <script>
+        setTimeout(() => location.reload(), 3000);
+    </script>
     <div class="header">
     <img src="{{ url_for('static', filename='images/logo.png') }}" class="logo" alt="Not wroking">
     <h2>Logs for {{ campus }}</h2>
@@ -56,19 +59,24 @@
         <div class="message">{{ message }}</div>
     {% else %}
         <table>
+            
             <tr>
                 <th>RFID</th>
                 <th>Name</th>
                 <th>Check In</th>
                 <th>Check Out</th>
+                
             </tr>
             {% for log in logs %}
+            {% if 86400 > log.sec_ago %}
             <tr>
                 <td>{{ log.RFID }}</td>
                 <td>{{ log.name }}</td>
                 <td>{{ log.check_in | default("—") }}</td>
                 <td>{{ log.check_out | default("—") }}</td>
+                
             </tr>
+            {% endif %}
             {% endfor %}
         </table>
     {% endif %}

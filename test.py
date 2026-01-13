@@ -1,4 +1,5 @@
 #Importing stuff
+from logging import log
 from flask import Flask, render_template, redirect, request, jsonify, url_for, session
 from datetime import datetime, timedelta, timezone
 from flask_bcrypt import Bcrypt
@@ -17,10 +18,10 @@ Supabase_ServiceKey = os.getenv("SUPABASE_SERVICEKEY")
 #Access the database made in supabase
 
 supabase = create_client(Supabase_URL, Supabase_ServiceKey)
-
+# Need to implement time ago function
 def time_ago(timestamp_str):
     timestamp = datetime.fromisoformat(timestamp_str.replace('Z', '+00:00'))
-    now = datetime.now(timezone.utc)
+    now = datetime.now()
     diff = now - timestamp
 
     seconds = diff.total_seconds()
@@ -33,20 +34,33 @@ def time_ago(timestamp_str):
         return f"{int(seconds/3600)}h ago"
     else:
         return f"{int(seconds/86400)}d ago"
+def sec_ago(timestamp_str):
+    timestamp = datetime.fromisoformat(timestamp_str.replace('Z', '+00:00'))
+    now = datetime.now()
+    diff = now - timestamp
+
+    seconds = diff.total_seconds()
+    return int(seconds)
 
 #Creating the actual web
 app = Flask(__name__)
 app.config["JWT_SECRET_KEY"] = os.getenv("JWT_SECRET")
-
 app.secret_key = os.getenv("FLASK_SECRET", "dev")
+app.config.update(
+    SESSION_COOKIE_HTTPONLY=True,
+    SESSION_COOKIE_SAMESITE="Lax",
+    PERMANENT_SESSION_LIFETIME=timedelta(hours=12),)
+
 app.config["JWT_SECRET_KEY"] = os.getenv("JWT_SECRET")
 app.config["JWT_TOKEN_LOCATION"] = ["cookies"]
 app.config["JWT_ACCESS_COOKIE_NAME"] = "access_token_cookie"
 app.config["JWT_COOKIE_SECURE"] = False   # True only on HTTPS (Render will handle that)
 app.config["JWT_COOKIE_CSRF_PROTECT"] = False
+
+
 bcrypt = Bcrypt(app)
 jwt = JWTManager(app)
-locale = []
+
 #Setting up home page
 @app.route("/", methods = ["GET", "POST"])
 def home():
@@ -113,7 +127,12 @@ def admin_dashboard():
     logs = result.data or []
     
     message = f"No students from {campus_name} logged in currently." if not logs else None
-    
+    for log in logs:
+        if log["rawtime"]:
+            log["time_ago"] = time_ago(log["rawtime"])
+            log["sec_ago"] = sec_ago(log["rawtime"])
+    # Need to add duration column in the table
+
     return render_template("view_logs.html", campus=campus_name, logs=logs, message=message)
 
 
@@ -122,6 +141,7 @@ def admin_dashboard():
 @jwt_required()
 def add_student():
     email = get_jwt_identity()
+    
     if not email:
         return(redirect(url_for("admin_login")))
     
@@ -136,7 +156,19 @@ def add_student():
         rfid = request.form.get("rfid")
 
         campus_info = supabase.table("Students").select("Campus_id").eq("RFID", rfid).execute()
+        if not campus_info.data:
+            message = "RFID not found"
+            result = supabase.rpc("get_logged_in").execute()
+            tots = supabase.table("Logs").select("*", count="exact").is_("check_out", "null").execute()
+            tot = tots.count
+            logs = result.data or []
+            for log in logs:
+                if log["rawtime"]:
+                    log["time_ago"] = time_ago(log["rawtime"])
+            return render_template("login.html", logs=logs, message=message, locale=locale, tot=tot)
+        
         home_campus = campus_info.data[0]["Campus_id"]
+
         campus = supabase.table("Campus").select("Name").eq("id", home_campus).execute()
         
         response = supabase.rpc("log_in_or_out", {
@@ -151,6 +183,7 @@ def add_student():
 
         action = response.data if response.data else "Action failed"
         message = action
+        return redirect(url_for("add_student"))
     else:
         message = None
 
@@ -158,9 +191,9 @@ def add_student():
     tots = supabase.table("Logs").select("*", count="exact").is_("check_out", "null").execute()
     tot = tots.count
     logs = result.data or []
-    longago = []
-    
-    
+    for log in logs:
+        if log["rawtime"]:
+            log["time_ago"] = time_ago(log["rawtime"])
 
     return render_template("login.html", logs=logs, message=message, locale=locale, tot=tot)
     

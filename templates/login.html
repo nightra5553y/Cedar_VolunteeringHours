@@ -98,14 +98,16 @@
                 <th>Campus</th>
                 <th>Check In Time</th>
                 <th>Time Ago</th>
-                
+                <th>Campus At</th>
             </tr>
             {% for log in logs %}
             <tr>
                 <td>{{ log.RFID }}</td>
                 <td>{{ log.Name }}</td>
                 <td>{{ log.campus_name or "—" }}</td>
-                <td>{{ log.check_in or log.check_in_time}}</td>
+                <td>{{ log.check_in_time }}</td>
+                <td>{{ log.time_ago }}</td>
+                <td>{{ log.Campus_At }}</td>
             {% endfor %}    
             </tr>
         </table>
