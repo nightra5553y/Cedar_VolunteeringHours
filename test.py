@@ -9,6 +9,7 @@ import webbrowser, threading
 from supabase import create_client
 from dotenv import load_dotenv
 import json
+from zoneinfo import ZoneInfo
 
 #Parses the env file made
 load_dotenv()
@@ -21,8 +22,10 @@ supabase = create_client(Supabase_URL, Supabase_ServiceKey)
 # Need to implement time ago function
 def time_ago(timestamp_str):
     timestamp = datetime.fromisoformat(timestamp_str.replace('Z', '+00:00'))
-    now = datetime.now()
-    diff = now - timestamp
+    pakistan_tz = ZoneInfo("Asia/Karachi") 
+    timestamp_local = timestamp.astimezone(pakistan_tz) 
+    now_local = datetime.now(pakistan_tz)
+    diff = now_local - timestamp_local
 
     seconds = diff.total_seconds()
 
