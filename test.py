@@ -16,10 +16,10 @@ load_dotenv()
 
 Supabase_URL = os.getenv("SUPABASE_URL")
 Supabase_ServiceKey = os.getenv("SUPABASE_SERVICEKEY")
-#Access the database made in supabase
-
 supabase = create_client(Supabase_URL, Supabase_ServiceKey)
-# Need to implement time ago function
+#Establishes the connection but might need to remove service key later
+
+# Need to refine the time ago function, it works for now
 def time_ago(timestamp_str):
     timestamp = datetime.fromisoformat(timestamp_str.replace('Z', '+00:00'))
     pakistan_tz = ZoneInfo("Asia/Karachi") 
@@ -36,6 +36,8 @@ def time_ago(timestamp_str):
         return f"{int(seconds/3600)}h ago"
     else:
         return f"{int(seconds/86400)}d ago"
+
+# Used for by-campus logs
 def sec_ago(timestamp_str):
     timestamp = datetime.fromisoformat(timestamp_str.replace('Z', '+00:00'))
     now = datetime.now()
@@ -44,7 +46,8 @@ def sec_ago(timestamp_str):
     seconds = diff.total_seconds()
     return int(seconds)
 
-#Creating the actual web
+
+# Establishing Flask app
 app = Flask(__name__)
 app.config["JWT_SECRET_KEY"] = os.getenv("JWT_SECRET")
 app.secret_key = os.getenv("FLASK_SECRET", "dev")
@@ -63,6 +66,7 @@ app.config["JWT_COOKIE_CSRF_PROTECT"] = False
 bcrypt = Bcrypt(app)
 jwt = JWTManager(app)
 
+
 #Setting up home page
 @app.route("/", methods = ["GET", "POST"])
 def home():
@@ -71,20 +75,20 @@ def home():
     return redirect(url_for("admin_login"))
     
 
+# Admin login
 @app.route("/admin/login", methods=["GET", "POST"])
 def admin_login():
     if request.method == "POST":
         email = request.form.get("email")
         password = request.form.get("password")
 
-        # Fetch the admin dets from table
+        # Fetch the admin details from table
         result = supabase.table("Admins").select("*").eq("Email", email).execute()
         if not result.data:
             return render_template("admin_login.html", error = "Admin not found")
         
         admin = result.data[0]
 
-        
         # Check password hash
         if not bcrypt.check_password_hash(admin["Password_Hash"], password):
             return render_template("admin_login.html", error="Invalid password")
@@ -98,13 +102,16 @@ def admin_login():
         resp = redirect(url_for("admin_dashboard"))
         resp.set_cookie("access_token_cookie", token, httponly=True)
         return resp
+    
     s = url_for("static", filename="logo.png")
     return render_template("admin_login.html", s=s)
 
 
+# Creates the dashboard which shows by campus logs (and need to add admin name here)
 @app.route("/admin/dashboard")
 @jwt_required(optional=True)
 def admin_dashboard():
+    
     email = get_jwt_identity()  # gets 'email'
     if not email:
         return(redirect(url_for("admin_login")))
@@ -113,7 +120,7 @@ def admin_dashboard():
     if not admin_response:
         return jsonify({"error": "Admin not found"}), 404
     
-    print(admin_response.data)  
+    # print(admin_response.data) # For debugging  
     
     campus_id = admin_response.data[0]['Campus_ID']
 
@@ -123,7 +130,8 @@ def admin_dashboard():
     
     campus_name = campus_response.data[0]["Name"]
 
-
+    adminname_response = supabase.table("Admins").select("Admin_Name").eq("Email", email).execute()
+    admin_name = adminname_response.data[0]["Admin_Name"]
     # Fetch campus logs
     result = supabase.rpc("get_logs_by_campus", {"campus_name": campus_name}).execute()
     logs = result.data or []
@@ -135,7 +143,7 @@ def admin_dashboard():
             log["sec_ago"] = sec_ago(log["rawtime"])
     # Need to add duration column in the table
 
-    return render_template("view_logs.html", campus=campus_name, logs=logs, message=message)
+    return render_template("view_logs.html", campus=campus_name, logs=logs, message=message, admin_name=admin_name)
 
 
 #Logging-in
@@ -147,13 +155,19 @@ def add_student():
     if not email:
         return(redirect(url_for("admin_login")))
     
+    # Gets admin's campus ID
     admin_response = supabase.table("Admins").select("Campus_ID").eq("Email", email).execute()
     if not admin_response:
         return jsonify({"error": "Admin not found"}), 404
-    
     campus_id = admin_response.data[0]["Campus_ID"]
     campus = supabase.table("Campus").select("Name").eq("id", campus_id).execute()
     locale = campus.data[0]["Name"]
+
+    # Gets admin's ID
+    adminid_response = supabase.table("Admins").select("id").eq("Email", email).execute()
+    admin_id = adminid_response.data[0]["id"]
+    
+    # Handles the logging in and out
     if request.method == "POST":        
         rfid = request.form.get("rfid")
 
@@ -162,7 +176,7 @@ def add_student():
             
             home_campus = campus_info.data[0]["Campus_id"]
         except:
-            
+            # If RFID not found need to give option to add student
             message = "RFID not found"
             result = supabase.rpc("get_logged_in").execute()
             tots = supabase.table("Logs").select("*", count="exact").is_("check_out", "null").execute()
@@ -178,7 +192,8 @@ def add_student():
         response = supabase.rpc("log_in_or_out", {
             "rfid_input": int(rfid),
             "campus_input": home_campus,
-            "locale": locale
+            "locale": locale,
+            "admin_id": admin_id
         }).execute()
         
         
