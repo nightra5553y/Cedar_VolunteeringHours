@@ -1,6 +1,7 @@
 #Importing stuff
+import csv
 from logging import log
-from flask import Flask, render_template, redirect, request, jsonify, url_for, session
+from flask import Flask, render_template, redirect, request, jsonify, url_for, session, make_response
 from datetime import datetime, timedelta, timezone
 from flask_bcrypt import Bcrypt
 from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity, get_jwt
@@ -10,6 +11,9 @@ from supabase import create_client
 from dotenv import load_dotenv
 import json
 from zoneinfo import ZoneInfo
+import csv
+import io
+
 
 #Parses the env file made
 load_dotenv()
@@ -94,9 +98,9 @@ def admin_login():
             return render_template("admin_login.html", error="Invalid password")
 
 
-        # Create JWT token valid for 1 hour and show the admin's campus infoi
+        # Create JWT token valid for 15 hour and show the admin's campus infoi
         token = create_access_token(
-            identity=email, expires_delta= timedelta(hours=1)
+            identity=email, expires_delta= timedelta(hours=15)
         )
 
         resp = redirect(url_for("admin_dashboard"))
@@ -234,9 +238,112 @@ def logout():
     resp.delete_cookie("access_token_cookie")
     return resp
 
+@app.route("/export_logs")
+@jwt_required()
+def export_logs():
+
+    email = get_jwt_identity()
+
+    admin = supabase.table("Admins").select("Role").eq("Email", email).execute()
+    # if admin.data[0]["Role"] != "Super":
+    #     return jsonify({"error": "Unauthorized"}), 403
+    result = supabase.rpc("export_logs").execute()
+    output = io.StringIO()
+    writer = csv.writer(output)
+
+    writer.writerow([
+        "RFID", "Name", "Campus", "Event", "Check In", "Check Out", "Approved", "Logged In By", "Logged Out By", "Duration (hours)"
+    ])
+    for res in result.data:
+        writer.writerow([ res["RFID"], res["Name"], res["Campus"], res["Event"], res["Check_In"], res["Check_Out"], res["Approved"], res["Logged_In_By"], res["Logged_Out_By"], res["Duration_Hours"] ])
+
+    response = make_response(output.getvalue())
+    response.headers["Content-Disposition"] = "attachment; filename=logs.csv"
+    response.headers["Content-type"] = "text/csv"
+    return response
+
+#Creating a page for the scanner
+@app.route("/scanner", methods=["GET", "POST"])
+@jwt_required()
+def scanner():
+    email = get_jwt_identity()
+    if not email:
+        return redirect(url_for("admin_login"))
+
+    admin = supabase.table("Admins") \
+        .select("id, Role, Campus_ID") \
+        .eq("Email", email) \
+        .single() \
+        .execute()
+
+    if not admin.data or admin.data["Role"] not in ["Scanner", "Super", "Admin"]:
+        return redirect(url_for("admin_login"))
+
+    campus = supabase.table("Campus") \
+        .select("Name") \
+        .eq("id", admin.data["Campus_ID"]) \
+        .single() \
+        .execute()
+
+    locale = campus.data["Name"]
+    message = None
+    status = None
+    print("Working")
+    print(request.method)
+    if request.method == "POST":
+        rfid = request.form.get("rfid", "").strip()
+
+        print(f"RFID received: {rfid}")
+        if not rfid.isdigit():
+            return render_template(
+                "scanner.html",
+                message="Invalid RFID",
+                status="error"
+            )
+        try:
+            student = supabase.table("Students") \
+                .select("Campus_id") \
+                .eq("RFID", int(rfid)) \
+                .single() \
+                .execute()
+        except:
+        
+            return render_template(
+                "scanner.html",
+                message="Unknown RFID",
+                status="error"
+            )
+
+        print(f"Student Campus ID: {student.data['Campus_id']}")
+        response = supabase.rpc(
+            "log_in_or_out",
+            {
+                "rfid_input": int(rfid),
+                "campus_input": student.data["Campus_id"],
+                "locale": locale,
+                "admin_id": admin.data["id"]
+            }
+        ).execute()
+        print(f"RPC Response: {response.data}")
+        if response.data:
+            message = response.data
+            status = "success"
+        else:
+            message = "Scan failed"
+            status = "error"
+        print(f"Final Message: {message}, Status: {status}")
+
+    return render_template(
+        "scanner.html",
+        message=message,
+        status=status
+    )
+    
+
 def open_browser():
     webbrowser.open("http://127.0.0.1:5000/admin/login")
 threading.Timer(1.0, open_browser).start()
+
 
 
 

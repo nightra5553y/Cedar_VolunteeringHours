@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>RFID Scanner</title>
+    <style>
+        body {
+            font-family: system-ui;
+            text-align: center;
+            margin-top: 100px;
+        }
+        input {
+            font-size: 28px;
+            padding: 12px;
+            width: 320px;
+        }
+        .message {
+            color: green;
+            font-weight: bold;
+            margin-bottom: 15px;
+        }
+    </style>
+</head>
+
+<body>
+<h1>Scan Card</h1>
+
+<form id="scanForm" method="POST">
+    <input
+        id="rfidInput"
+        name="rfid"
+        type="text"
+        autofocus
+        autocomplete="off"
+    >
+</form>
+<script>
+  // Disable right click
+  document.addEventListener("contextmenu", e => e.preventDefault());
+
+  // Force focus back to input
+  setInterval(() => {
+    document.getElementById("rfidInput")?.focus();
+  }, 300);
+
+  // Disable back button
+  history.pushState(null, "", location.href);
+  window.onpopstate = () => history.go(1);
+</script>
+<script>
+const input = document.getElementById("rfidInput");
+const form = document.getElementById("scanForm");
+
+input.addEventListener("keydown", function (e) {
+    if (e.key === "Enter") {
+        e.preventDefault();
+        form.submit();
+    }
+});
+
+form.addEventListener("submit", () => {
+    setTimeout(() => input.value = "", 50);
+});
+</script>
+
+{% if message %}
+    <div class="message">{{ message }}</div>
+{% endif %}
+
+<br>
+<a href="/admin/dashboard">Admin Dashboard</a><br>
+<a href="/admin/summary">View Summary</a>
+</body>
+</html>
